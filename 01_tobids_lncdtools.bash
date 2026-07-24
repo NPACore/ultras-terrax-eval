@@ -49,3 +49,6 @@ add-intended-for -fmap '*_acq-task_dir-AP_run-1_epi.json' \
 add-intended-for -fmap '*_acq-task_dir-AP_run-2_epi.json' \
   -for '*task-grasp*run-3_bold.nii.gz' \
   bids/sub-*/ses-*/
+
+# 20260724 - fix missing session
+rg -l 'IntendedFor.*"func' bids/*/*/fmap/*json| while read f; do  [[ $f =~ ses-[^/_-]* ]] || continue; ses=$BASH_REMATCH; sed -i  "/IntendedFor/ s:\"func/:\"$ses/func/:g" $f; done
