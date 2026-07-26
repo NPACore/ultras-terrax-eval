@@ -1,10 +1,14 @@
-# dcmdirtab -d 'raw/*/DICOM/*/' > dcmdb.tsv
-
+#!/usr/bin/env bash
+# dcmdb.tsv input from 00_mkdb.bash
 dcmtab_bids \
 	\
-       	'anat/UNIT1;dname=anat-UNIT1.*UNI-DEN_ND' \
-        'anat/MP2RAGE;dname=anat.*_INV1_ND;inv=1' \
-        'anat/MP2RAGE;dname=anat.*_INV2_ND;inv=2' \
+       	`#'anat/UNIT1;dname=anat-UNIT1.*UNI-DEN_ND'` \
+        `#'anat/MP2RAGE;dname=anat.*_INV1_ND;inv=1'` \
+        `#'anat/MP2RAGE;dname=anat.*_INV2_ND;inv=2'` \
+	`# 20260725 - Eval2 does not have ND versions` \
+       	'anat/UNIT1;dname=anat-UNIT1.*UNI-DEN' \
+        'anat/MP2RAGE;dname=anat.*_INV1;inv=1' \
+        'anat/MP2RAGE;dname=anat.*_INV2;inv=2' \
 	\
 	\
 	'epi;ndcm=2,pname=fmap-epi_acq-task_dir-AP;dir=AP;acq=task;fixrun=1'\
@@ -46,7 +50,16 @@ add-intended-for -fmap '*_acq-task_dir-AP_run-1_epi.json' \
    -for '*task-grasp*run-2_bold.nii.gz' \
    -for '*rest*acq-fast*_bold.nii.gz' \
    bids/sub-*/ses-*/
+add-intended-for -fmap '*_acq-task_dir-PA_run-1_epi.json' \
+   -for '*task-grasp*run-1_bold.nii.gz' \
+   -for '*task-grasp*run-2_bold.nii.gz' \
+   -for '*rest*acq-fast*_bold.nii.gz' \
+   bids/sub-*/ses-*/
+
 add-intended-for -fmap '*_acq-task_dir-AP_run-2_epi.json' \
+  -for '*task-grasp*run-3_bold.nii.gz' \
+  bids/sub-*/ses-*/
+add-intended-for -fmap '*_acq-task_dir-PA_run-2_epi.json' \
   -for '*task-grasp*run-3_bold.nii.gz' \
   bids/sub-*/ses-*/
 

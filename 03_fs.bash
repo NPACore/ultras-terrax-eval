@@ -16,13 +16,17 @@ fs_docker(){
        --env FS_ALLOW_DEEP=1 \
        --env SUBJECTS_DIR="$SUBJECTS_DIR" \
        --env FS_LICENSE="$FS_LICENSE" \
-       --rm "$container" \
+       --rm \
+       "$container" \
        "$@"
 
 }
 
+# run specific set of T1ws through FS or run on 'all'
+[[ $# -eq 0 || $* =~ ^-h ]] && echo "USAGE: $0 [all|bids/sub-*/ses-*/anat/*_T1w.nii.gz]" && exit
+[[ $1 == "all" ]] && t1_to_run=("$@") || t1_to_run=(bids/sub-*/ses-*/anat/*_T1w.nii.gz)
 
-for f in bids/sub-*/ses-*/anat/*_T1w.nii.gz; do
+for f in ${t1_to_run[@]}; do
   ! test -r $f && echo "ERROR: no file like '$f'" && continue
   ! [[ $f =~ sub-([^_/]*).ses-([^_/]*) ]] && echo "no id in $f" && continue
 
