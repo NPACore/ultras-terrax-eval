@@ -24,7 +24,7 @@ fs_docker(){
 
 # run specific set of T1ws through FS or run on 'all'
 [[ $# -eq 0 || $* =~ ^-h ]] && echo "USAGE: $0 [all|bids/sub-*/ses-*/anat/*_T1w.nii.gz]" && exit
-[[ $1 == "all" ]] && t1_to_run=("$@") || t1_to_run=(bids/sub-*/ses-*/anat/*_T1w.nii.gz)
+[[ $1 == "all" ]] && t1_to_run=(bids/sub-*/ses-*/anat/*_T1w.nii.gz) || t1_to_run=("$@")
 
 for f in ${t1_to_run[@]}; do
   ! test -r $f && echo "ERROR: no file like '$f'" && continue
