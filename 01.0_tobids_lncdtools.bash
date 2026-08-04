@@ -31,6 +31,9 @@ dcmtab_bids \
        	'bold=grasp;ndcm=300,pname=func-bold_task-grasp_run-1;acq=fast;fixrun=1' \
        	'sbref=grasp;ndcm=1,pname=func-bold_task-grasp_run-1;acq=fast;fixrun=1' \
 	\
+       	'bold=grasp;ndcm=200,pname=func-bold_task-grasp_acq-HR_run-1;acq=highres;fixrun=1' \
+       	'sbref=grasp;ndcm=1,pname=func-bold_task-grasp_acq-HR_run-1;acq=highres;fixrun=1' \
+	\
        	'bold=grasp;ndcm=300,pname=func-bold_task-grasp_run-2;acq=fast;fixrun=2' \
        	'sbref=grasp;ndcm=1,pname=func-bold_task-grasp_run-2;acq=fast;fixrun=2' \
 	\
@@ -46,12 +49,12 @@ dcmtab_bids \
 # IntendedFor instead of B0FieldIdentifier and B0FieldSource only b/c we have script for the former
 # there's a long break between run-2 and run-3 of grasp. so new fieldmap
 add-intended-for -fmap '*_acq-task_dir-AP_run-1_epi.json' \
-   -for '*task-grasp*run-1_bold.nii.gz' \
+   -for '*task-grasp*acq-fast*run-1_bold.nii.gz' \
    -for '*task-grasp*run-2_bold.nii.gz' \
    -for '*rest*acq-fast*_bold.nii.gz' \
    bids/sub-*/ses-*/
 add-intended-for -fmap '*_acq-task_dir-PA_run-1_epi.json' \
-   -for '*task-grasp*run-1_bold.nii.gz' \
+   -for '*task-grasp*acq-fast*run-1_bold.nii.gz' \
    -for '*task-grasp*run-2_bold.nii.gz' \
    -for '*rest*acq-fast*_bold.nii.gz' \
    bids/sub-*/ses-*/
