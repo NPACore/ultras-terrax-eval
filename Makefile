@@ -25,3 +25,8 @@ dcmdb.tsv: $(wildcard raw/*/DICOM/*/)
 # template rule for all folders. but really just for .make/
 %/:
 	mkdir -p $@
+
+HumanEvalTerraX.ipynb: /raidmeduser/OngoingResearch/7TDATA/TerraX/HumanEvalTerraX.ipynb
+	cp $< $@
+HumanEvalTerraX.py: HumanEvalTerraX.ipynb
+	bash -c 'source /opt/ni_tools/venv/bin/activate && jupytext -o $@ --to py $< '
