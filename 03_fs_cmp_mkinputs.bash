@@ -12,11 +12,23 @@ set -euo pipefail
 cd "$(dirname $0)"
 checkcnt(){ test 1 -gt "$(find -L $@  -type f,l |wc -l)" && echo "# $(tput setaf 1)ERROR:$(tput sgr0) only $_ files in $*" && return 1; return 0; }
 export PATH="$PATH:/opt/ni_tools/mp2rage-den-unicort" # unicort_one
-imgtypes=(NNxIMAGExLay NNxDENxLay NDxIMAGExLay NNxDENxNoLay) # also makes *xImagexLayx{N4,unicort}
-for subses in bids/sub-{Phant1,Eval{1,2,3}}/ses-*; do
+imgtypes=(NNxIMAGExLay NNxDENxLay NNxDENxNoLay  NDxIMAGExLay NDxDENxLay) # also makes *xImagexLayx{N4,unicort}
+
+
+grepdcmdb() {
+	grep -Po "raw/${ses}[^/]*$rawsub/DICOM/${1:?acq pattern}" dcmdb.tsv|
+	sort -u |sed 1q; }
+
+[ $# -gt 0 ] &&
+  SUBS=("$@") ||
+  SUBS=(bids/sub-{Phant1,Eval{1,2,3},fmri}/ses-*)
+
+for subses in "$SUBS"; do
 	for img in "${imgtypes[@]}"; do
 		! [[ $subses =~ sub-([^/]*)/ses-([0-9]+) ]] && echo "no sub ses in '$subses'" && continue
 		sub=${BASH_REMATCH[1]} ses=${BASH_REMATCH[2]}
+                rawsub=$sub
+		[[ $sub =~ fmri ]] && rawsub=fMRI_SPA_EyeTrack
 
 		outdir=$(readlink -f $PWD/deriv)/fs/compare/sub-${sub}_ses-${ses}
 		fs_input=$outdir/$img.nii.gz
@@ -27,43 +39,44 @@ for subses in bids/sub-{Phant1,Eval{1,2,3}}/ses-*; do
 		inv1=$subses/anat/*_inv-1_MP2RAGE.nii.gz
 		inv2=$subses/anat/*_inv-2_MP2RAGE.nii.gz
 		uni=$subses/anat/*_UNIT1noden.nii.gz
+                # eg 'RR2_RR_UNI_Images_ND' from fmri retro-recon
+		anat_prefix="anat-UNIT1__mp2rage_cs6.5_0.65mm_pTx(_RR2_RR|)"
 		case $img in
 			NNxIMAGExLay)
-				dcminv1=$(grep -Po "raw/${ses}[^/]*$sub/DICOM/anat-UNIT1__mp2rage_cs6.5_0.65mm_pTx_INV1_[0-9]+_MR/" dcmdb.tsv|sort -u)
-				dcminv2=$(grep -Po "raw/${ses}[^/]*$sub/DICOM/anat-UNIT1__mp2rage_cs6.5_0.65mm_pTx_INV2_[0-9]+_MR/" dcmdb.tsv|sort -u) 
-				dcmuni=$(grep -Po "raw/${ses}[^/]*$sub/DICOM/anat-UNIT1__mp2rage_cs6.5_0.65mm_pTx_UNI_Images_[0-9]+_MR/" dcmdb.tsv|sort -u)
+				dcminv1=$(grepdcmdb "${anat_prefix}_INV1_[0-9]+_MR/")
+				dcminv2=$(grepdcmdb "${anat_prefix}_INV2_[0-9]+_MR/") 
+				dcmuni=$(grepdcmdb "${anat_prefix}_UNI_Images_[0-9]+_MR/")
 
 				inv1=$outdir/NN-inv1.nii.gz
 				inv2=$outdir/NN-inv2.nii.gz
 				uni=$outdir/NN-image.nii.gz;;
 			NNxDENxLay)
-				dcminv1=$(grep -Po "raw/${ses}[^/]*$sub/DICOM/anat-UNIT1__mp2rage_cs6.5_0.65mm_pTx_INV1_[0-9]+_MR/" dcmdb.tsv|sort -u) 
-				dcminv2=$(grep -Po "raw/${ses}[^/]*$sub/DICOM/anat-UNIT1__mp2rage_cs6.5_0.65mm_pTx_INV2_[0-9]+_MR/" dcmdb.tsv|sort -u) 
-				dcmuni=$(grep -Po "raw/${ses}[^/]*$sub/DICOM/anat-UNIT1__mp2rage_cs6.5_0.65mm_pTx_UNI-DEN_[0-9]+_MR/" dcmdb.tsv|sort -u)
+				dcminv1=$(grepdcmdb "${anat_prefix}_INV1_[0-9]+_MR/") 
+				dcminv2=$(grepdcmdb "${anat_prefix}_INV2_[0-9]+_MR/") 
+				dcmuni=$(grepdcmdb "${anat_prefix}_UNI-DEN_[0-9]+_MR/")
 
 				inv1=$outdir/NN-inv1.nii.gz
 				inv2=$outdir/NN-inv2.nii.gz
 				uni=$outdir/NN-den.nii.gz;;
 			NNxDENxNoLay)
-				dcminv1=$(grep -Po "raw/${ses}[^/]*$sub/DICOM/anat-UNIT1__mp2rage_cs6.5_0.65mm_pTx_INV1_[0-9]+_MR/" dcmdb.tsv|sort -u) 
-				dcminv2=$(grep -Po "raw/${ses}[^/]*$sub/DICOM/anat-UNIT1__mp2rage_cs6.5_0.65mm_pTx_INV2_[0-9]+_MR/" dcmdb.tsv|sort -u) 
-				# ADDED missing 'sort -u' need to rerun just NNxDENxNoLay
-				dcmuni=$(grep -Po "raw/${ses}[^/]*$sub/DICOM/anat-UNIT1__mp2rage_cs6.5_0.65mm_pTx_UNI-DEN_[0-9]+_MR/" dcmdb.tsv|sort -u) 
+				dcminv1=$(grepdcmdb "${anat_prefix}_INV1_[0-9]+_MR/") 
+				dcminv2=$(grepdcmdb "${anat_prefix}_INV2_[0-9]+_MR/") 
+				 dcmuni=$(grepdcmdb "${anat_prefix}_UNI-DEN_[0-9]+_MR/") 
 				inv1=
 				inv2=
 				uni=$fs_input;;
 			NDxIMAGExLay)
-				dcminv1=$(grep -Po "raw/${ses}[^/]*$sub/DICOM/anat-UNIT1__mp2rage_cs6.5_0.65mm_pTx_INV1_ND_[0-9]+_MR/" dcmdb.tsv|sort -u)  || :
-				dcminv2=$(grep -Po "raw/${ses}[^/]*$sub/DICOM/anat-UNIT1__mp2rage_cs6.5_0.65mm_pTx_INV2_ND_[0-9]+_MR/" dcmdb.tsv|sort -u)  || :
-				dcmuni=$(grep -Po "raw/${ses}[^/]*$sub/DICOM/anat-UNIT1__mp2rage_cs6.5_0.65mm_pTx_UNI_Images_ND_[0-9]+_MR/" dcmdb.tsv|sort -u) || : 
+				dcminv1=$(grepdcmdb "${anat_prefix}_INV1_ND_[0-9]+_MR/")  || :
+				dcminv2=$(grepdcmdb "${anat_prefix}_INV2_ND_[0-9]+_MR/")  || :
+				dcmuni=$(grepdcmdb "${anat_prefix}_UNI_Images_ND_[0-9]+_MR/") || : 
 
 				inv1=$outdir/ND-inv1.nii.gz
 				inv2=$outdir/ND-inv2.nii.gz
 				uni=$outdir/ND-image.nii.gz;;
 			NDxDENxLay)
-				dcminv1=$(grep -Po "raw/${ses}[^/]*$sub/DICOM/anat-UNIT1__mp2rage_cs6.5_0.65mm_pTx_INV1_ND_[0-9]+_MR/" dcmdb.tsv|sort -u)  || :
-				dcminv2=$(grep -Po "raw/${ses}[^/]*$sub/DICOM/anat-UNIT1__mp2rage_cs6.5_0.65mm_pTx_INV2_ND_[0-9]+_MR/" dcmdb.tsv|sort -u)  || :
-				dcmuni=$(grep -Po "raw/${ses}[^/]*$sub/DICOM/anat-UNIT1__mp2rage_cs6.5_0.65mm_pTx_UNI-DEN_ND_[0-9]+_MR/" dcmdb.tsv|sort -u) || :
+				dcminv1=$(grepdcmdb "${anat_prefix}_INV1_ND_[0-9]+_MR/")  || :
+				dcminv2=$(grepdcmdb "${anat_prefix}_INV2_ND_[0-9]+_MR/")  || :
+				dcmuni=$(grepdcmdb "${anat_prefix}_UNI-DEN_ND_[0-9]+_MR/") || :
 
 				inv1=$outdir/ND-inv1.nii.gz
 				inv2=$outdir/ND-inv2.nii.gz
@@ -71,7 +84,9 @@ for subses in bids/sub-{Phant1,Eval{1,2,3}}/ses-*; do
 			*) echo "ERROR: unknown image type '$img'" && continue;;
 		esac
 
-		[ -z "$dcmuni" -o ! -d "$dcmuni" ] && echo "## ERROR: $img: $sub/$ses: Missing dcmuni '$dcmuni' for $subses (expected for ND on eval2&3)"  && continue
+		[ -z "$dcmuni" -o ! -d "$dcmuni" ] &&
+		  echo "## ERROR: $img: $sub/$ses: Missing dcmuni '$dcmuni' for $subses (expected for ND on eval2&3)"  &&
+		  continue
 
 
 
@@ -99,7 +114,7 @@ for subses in bids/sub-{Phant1,Eval{1,2,3}}/ses-*; do
 		   	-INV1 $inv1  -INV2 $inv2  -UNI  $uni -output __SKIPFILE
 		fi
 
-		if [[ $img =~ IMAGExLay ]]; then
+		if [[ $img =~ IMAGExLay || $img =~ NDx ]]; then
 		    n4=${fs_input/.nii.gz}xN4.nii.gz
 		    skip-exist $n4 \
 		     niinote $n4 \
